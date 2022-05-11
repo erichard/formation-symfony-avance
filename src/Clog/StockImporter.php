@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Clog;
 
+use App\Entity\Product;
+use App\Entity\Stock;
+use App\Entity\Warehouse;
 use App\Repository\ImportJobRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use League\Csv\Reader;
 
 class StockImporter
@@ -14,11 +18,11 @@ class StockImporter
     private $importJobRepository;
 
     public const CLOG_PROVIDER_ID = 1;
-    private Connection $connection;
+    private EntityManagerInterface $em;
 
-    public function __construct(Connection $connection, ImportJobRepository $importJobRepository)
+    public function __construct(EntityManagerInterface $em, ImportJobRepository $importJobRepository)
     {
-        $this->connection = $connection;
+        $this->em = $em;
         $this->importJobRepository = $importJobRepository;
     }
 
@@ -32,86 +36,38 @@ class StockImporter
 
         $job = $this->importJobRepository->createJob('Import Stock CLOG', $filename);
 
-        $warehouseId = $this->getWarehouseId();
-
-        $this
-            ->connection
-            ->beginTransaction();
-
-        $date = (new \DateTimeImmutable())->format('c');
-
-        $stmt = $this
-            ->connection
-            ->prepare('
-                -- Insertion/Mise à jour du stock
-                INSERT INTO stock (ean, warehouse_id, quantity_on_hand, updated_at)
-                VALUES (:ean, :warehouse, :quantity, :date)
-                ON CONFLICT (ean, warehouse_id) DO UPDATE
-                    SET quantity_on_hand = excluded.quantity_on_hand,
-                        updated_at = excluded.updated_at
-            ');
+        $date = new \DateTimeImmutable();
 
         $csv = Reader::createFromPath($filename, 'r');
         $csv->setDelimiter(';');
         $records = $csv->getRecords(['clog', 'code', 'date', 'ean', 'quantity']);
 
-        foreach ($records as $lineno => $data) {
-            if ('0' === $data['quantity']) {
+        $warehouseRepository = $this->em->getRepository(Warehouse::class);
+        $productRepository = $this->em->getRepository(Product::class);
+        $stockRepository = $this->em->getRepository(Stock::class);
+
+        foreach ($records as $lineno => $row) {
+            $warehouse = $warehouseRepository->findOneByLogisticProvider(self::CLOG_PROVIDER_ID);
+            $product = $productRepository->find($row['ean']);
+            if (null === $product) {
+
+                $job->addError([
+                    'data' => $row,
+                    'lineno' => $lineno,
+                    'message' => 'Produit inconnu pour le code EAN : '.$row['ean'],
+                ]);
+
                 continue;
             }
 
-            $stmt->bindValue(':warehouse', $warehouseId);
-            $stmt->bindValue(':ean', $data['ean']);
-            $stmt->bindValue(':date', $date);
-            $stmt->bindValue(':quantity', (int) $data['quantity']);
+            $stock = $stockRepository->findOrCreate($warehouse, $product);
+            $stock->setUpdatedAt($date);
+            $stock->setQuantityOnHand((int) $row['quantity']);
 
-            $savepoint = 'save_'.$data['ean'].'_'.$warehouseId;
-
-            $this->connection->createSavepoint($savepoint);
-
-            try {
-                $stmt->execute();
-                $job->increment();
-                $this->connection->releaseSavepoint($savepoint);
-            } catch (\Exception $exception) {
-                $this->connection->rollbackSavepoint($savepoint);
-                $message = $exception->getMessage();
-
-                if ($exception instanceof ForeignKeyConstraintViolationException) {
-                    $message = 'Produit inconnu pour le code EAN : '.$data['ean'];
-                }
-
-                $job->addError([
-                    'data' => $data,
-                    'lineno' => $lineno,
-                    'message' => $message,
-                ]);
-            }
+            $job->increment();
         }
-
-        $this->connection->executeUpdate(
-            'DELETE FROM stock s WHERE s.warehouse_id = :warehouse AND s.updated_at < :date',
-            ['warehouse' => $warehouseId, 'date' => $date]
-        );
-
-        $this
-            ->connection
-            ->commit();
+        $this->em->flush();
 
         $this->importJobRepository->finishJob($job);
-    }
-
-    private function getWarehouseId(): ?int
-    {
-        $stmt = $this->connection->executeQuery(
-            'SELECT id FROM warehouse WHERE logistic_provider_id = :provider',
-            ['provider' => self::CLOG_PROVIDER_ID]
-        );
-
-        if ($row = $stmt->fetch()) {
-            return (int) $row['id'];
-        }
-
-        return null;
     }
 }

@@ -25,6 +25,22 @@ class StockRepository extends ServiceEntityRepository
         parent::__construct($registry, Stock::class);
     }
 
+    public function findOrCreate(Warehouse $warehouse, Product $product)
+    {
+        $stock = $this
+            ->findOneBy(['warehouse' => $warehouse, 'ean' => $product]);
+
+        if (null === $stock) {
+            $stock = new Stock();
+            $stock->setWarehouse($warehouse);
+            $stock->setEan($product);
+
+            $this->_em->persist($stock);
+        }
+
+        return $stock;
+    }
+
     public function getStock(string $ean): int
     {
         $query = $this
