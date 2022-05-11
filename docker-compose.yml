@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  database:
+    image: postgres:${POSTGRES_VERSION:-13}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-formation}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      POSTGRES_USER: ${POSTGRES_USER:-formation}
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw
+      - ./var/database:/tmp/database:ro
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    ports:
+        - "8081:8080"
+
+volumes:
+  db-data:

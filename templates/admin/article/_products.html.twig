@@ -1,0 +1,25 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var field \EasyCorp\Bundle\EasyAdminBundle\Dto\FieldDto #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% if ea.crud.currentAction == 'detail' %}
+  <table class="table table-sm">
+    <tr>
+        <th class="text-center">Taille</th>
+        <th>EAN</th>
+        <th class="text-right">Stock</th>
+        <th class="text-right">Prix de vente</th>
+        <th class="text-right">Prix d'achat</th>
+    </tr>
+    {% for product in field.value %}
+      <tr class="table-warning">
+          <td class="text-center">{{ product.size }}</td>
+          <td><code>{{ product.id }}</code></td>
+          <td class="text-right">{{ product.quantityInStock }}</td>
+          <td class="text-right">{{ product.prixVenteFormatted|raw }}</td>
+          <td class="text-right">{{ product.prixAchatFormatted|raw }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <span class="badge badge-secondary">{{ field.formattedValue }}</span>
+{% endif %}

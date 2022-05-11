@@ -1,0 +1,19 @@
+when@prod:
+  sentry:
+    register_error_listener: false
+    dsn: '%env(SENTRY_DSN)%'
+    options:
+        environment: '%env(SENTRY_ENV)%'
+
+  monolog:
+    handlers:
+      sentry:
+        type: fingers_crossed
+        action_level: error
+        handler: sentry_main
+        excluded_http_codes: [ 404, 405 ]
+        buffer_size: 50
+      sentry_main:
+        type: sentry
+        level: error
+        hub_id: Sentry\State\HubInterface

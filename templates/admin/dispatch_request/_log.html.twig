@@ -1,0 +1,12 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var field \EasyCorp\Bundle\EasyAdminBundle\Dto\FieldDto #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% if ea.crud.currentAction == 'detail' %}
+  <ul class="list-unstyled">
+    {% for value in field.value %}
+      <li><i class="far {{ value.type == 'success' ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'}}"></i> {{ value.message }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <span class="badge badge-secondary">{{ field.formattedValue }}</span>
+{% endif %}

@@ -1,0 +1,14 @@
+# config/packages/framework.yaml
+framework:
+    http_client:
+        scoped_clients:
+            orliweb.client:
+                base_uri: '%env(ORLIWEB_API_HOST)%'
+                headers:
+                    Accept: 'application/json'
+when@dev:
+    framework:
+        http_client:
+            scoped_clients:
+                orliweb.client:
+                    proxy: socks5://localhost:9000

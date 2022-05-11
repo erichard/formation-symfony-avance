@@ -1,0 +1,19 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var field \EasyCorp\Bundle\EasyAdminBundle\Dto\FieldDto #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% if ea.crud.currentAction == 'detail' %}
+  <table class="table table-sm">
+    <tr>
+        <th>EAN</th>
+        <th>Quantité</th>
+    </tr>
+    {% for value in field.value %}
+      <tr>
+          <td><code>{{ value.ean }}</code></td>
+          <td class="col-1 text-right">{{ value.quantity }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <span class="badge badge-secondary">{{ field.formattedValue }}</span>
+{% endif %}

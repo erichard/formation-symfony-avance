@@ -1,0 +1,36 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var field \EasyCorp\Bundle\EasyAdminBundle\Dto\FieldDto #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% if ea.crud.currentAction == 'detail' %}
+
+    {% if field.value is empty %}
+        Pas d'erreur
+    {% else %}
+      <table class="table table-sm">
+        <tr>
+            <th>Ligne CSV</th>
+            <th>Erreur</th>
+            <th>Données</th>
+        </tr>
+        {% for value in field.value %}
+          <tr>
+              <td class="col-1 text-right">{{ value.lineno }}</td>
+              <td>{{ value.message }}</td>
+              <td class="col-4">
+                  <a data-bs-toggle="collapse" href="#error-{{value.lineno}}" role="button" aria-expanded="false" aria-controls="error-{{value.lineno}}">
+                  <i class="fa fa-caret-down"></i>
+                    Voir les données
+                  </a>
+
+                  <div class="collapse" id="error-{{value.lineno}}">
+                    <pre><code>{{ value.data|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                  </div>
+              </td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+
+{% else %}
+  <span class="badge badge-secondary">{{ field.formattedValue }}</span>
+{% endif %}

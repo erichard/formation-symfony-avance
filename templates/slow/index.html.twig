@@ -1,0 +1,38 @@
+{% extends "@EasyAdmin/page/content.html.twig" %}
+
+{% block content_title %}
+    C'est lent non ?
+{% endblock %}
+
+{% block main %}
+
+{% for batch in articles|batch(4) %}
+<div class="card-group">
+    {% for article in batch %}
+        <div class="card" style="width: 18rem;">
+          <img src="..." class="card-img-top" alt="...">
+          <div class="card-body">
+            <h5 class="card-title">{{ article.brand.name }} - {{ article.title }}</h5>
+            <p class="card-text">
+                <span class="badge bg-secondary">{{ article.genre }}</span>
+                <span class="badge bg-secondary">{{ article.ligne }}</span>
+                <span class="badge bg-secondary">{{ article.fermeture }}</span>
+                <span class="badge bg-secondary">{{ article.fabrication }}</span>
+                <span class="badge bg-secondary">{{ article.madeIn }}</span>
+            </p>
+
+            <h6>Tailles disponibles</h6>
+            <p class="card-text">
+                {% for product in article.products %}
+                <span class="badge bg-secondary">{{ product.size }}</span>
+                {% endfor %}
+            </p>
+            <a href="#" class="btn btn-primary">{{ article.minPrixVenteActualized|price }}</a>
+          </div>
+        </div>
+    {% endfor %}
+
+</div>
+{% endfor %}
+
+{% endblock %}
