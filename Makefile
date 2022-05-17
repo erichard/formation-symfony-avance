@@ -16,9 +16,13 @@ dump:
 	@dep database:download preprod
 	@symfony console doctrine:database:drop --force --quiet
 	@symfony console doctrine:database:create --quiet
-	@docker-compose exec database bash -c 'pg_restore -U $$POSTGRES_USER -d $$POSTGRES_DB --clean --if-exists --no-owner --no-acl /tmp/database/preprod.dump'
+	@docker-compose exec database bash -c 'pg_restore -U $$POSTGRES_USER -d $$POSTGRES_DB --clean --if-exists --no-owner --no-acl /tmp/database/formation.dump'
 	@symfony console doctrine:migration:migrate --no-interaction --quiet
 	@symfony server:start -d --quiet
+
+dump-local:
+	docker-compose exec database bash -c 'pg_dump -Fc -U $$POSTGRES_USER $$POSTGRES_DB -f /tmp/database/formation.dump'
+
 
 db:
 	@symfony console doctrine:database:drop --force
